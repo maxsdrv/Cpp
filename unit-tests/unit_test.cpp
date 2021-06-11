@@ -21,16 +21,34 @@ size_t GetCount(map& synonyms, const std::string& word) {
 
 bool CheckSynonyms(map& synonyms, const std::string& first_word, 
                    const std::string& second_word) {
-    return synonyms[first_word].count(second_word) == 1; 
+    return synonyms[first_word].count(second_word) == 0; 
 }                   
 
 template <typename T, typename U>
-void AssertEqual(const T& t, const U& u) {
+void AssertEqual(const T& t, const U& u, const std::string& hint) {
     if (t != u) {
         std::ostringstream os;
-        os << "Assertion failed: " << t << " != " << u;
+        os << "Assertion failed: " << t << " != " << u << " Hint: " << hint;
         throw std::runtime_error(os.str());
     }
+}
+
+template <typename K, typename V>
+std::ostream& operator<<(std::ostream& os, const std::map<K, V>& m) {
+    os << "(";
+    bool first = true;
+    for (const auto& kv : m) {
+        if (!first) {
+            os << ", ";
+        }
+        first = false;
+        os << kv.first << kv.second;
+    }
+    return os;
+}
+
+void Assert(bool b, const std::string& hint) {
+    AssertEqual(b, true, hint);
 }
 
 void TestAddSynonyms() {
@@ -41,7 +59,7 @@ void TestAddSynonyms() {
             {"a", {"b"}},
             {"b", {"a"}},
         };
-        assert (empty == expected);
+        AssertEqual(empty, expected, "Add to empty");
     }
     {
         map synonyms = {
@@ -55,7 +73,7 @@ void TestAddSynonyms() {
             {"b", {"a", "c"}},
             {"c", {"b", "a"}}
         };
-        assert (synonyms == expected);
+        AssertEqual(synonyms, expected, "Add to non-empty");
     }
     std::cout << "TestAddSynonyms OK" << std::endl;
 }
@@ -63,7 +81,7 @@ void TestAddSynonyms() {
 void TestCount() {
     {
         map empty;
-        assert(GetCount(empty, "a") == 0);
+        AssertEqual(GetCount(empty, "a"), 0u, "count for empty");
     }
     {
         map synonyms = {
@@ -71,17 +89,17 @@ void TestCount() {
             {"b", {"a"}},
             {"c", {"a"}}
         };
-        AssertEqual(GetCount(synonyms, "a"), 2);
-        AssertEqual(GetCount(synonyms, "b"), 1);
-        AssertEqual(GetCount(synonyms, "z"), 0);
+        AssertEqual(GetCount(synonyms, "a"), 2u, "count for a");
+        AssertEqual(GetCount(synonyms, "b"), 1u, "count for b");
+        AssertEqual(GetCount(synonyms, "z"), 0u, "count for z");
     }
     std::cout << "TestCount OK" << std::endl;
 }
 
 void TestAreSynonyms() {
     {   map empty;
-        assert(!CheckSynonyms(empty, "a", "b"));
-        assert(!CheckSynonyms(empty, "b", "a"));
+        Assert(!CheckSynonyms(empty, "a", "b"), "empty a b");
+        Assert(!CheckSynonyms(empty, "b", "a"), "empty b a");
     }
     {
         map synonyms = {
@@ -89,12 +107,12 @@ void TestAreSynonyms() {
             {"b", {"a"}}, 
             {"c", {"a"}}
         };
-        assert(CheckSynonyms(synonyms, "a", "b"));
-        assert(CheckSynonyms(synonyms, "b", "a"));
-        assert(CheckSynonyms(synonyms, "a", "c"));
-        assert(CheckSynonyms(synonyms, "c", "a"));
-        assert(!CheckSynonyms(synonyms, "c", "b"));
-        assert(!CheckSynonyms(synonyms, "b", "c"));
+        Assert(CheckSynonyms(synonyms, "a", "b"), "");
+        Assert(CheckSynonyms(synonyms, "b", "a"), "");
+        Assert(CheckSynonyms(synonyms, "a", "c"), "");
+        Assert(CheckSynonyms(synonyms, "c", "a"), "");
+        Assert(!CheckSynonyms(synonyms, "c", "b"), "");
+        Assert(!CheckSynonyms(synonyms, "b", "c"), "");
     }
     std::cout << "TestAreSynonyms OK" << std::endl;
 }
